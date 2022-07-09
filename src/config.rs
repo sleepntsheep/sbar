@@ -40,7 +40,6 @@ pub fn read_config(p: Option<String>) -> Config {
         Err(_) => "~/.config".to_string(),
     };
     let mut path = format!("{}/sbar/config.yaml", config_home);
-    println!("{}", path);
     match p {
         Some(p) => {
             path = p;

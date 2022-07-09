@@ -12,18 +12,21 @@ use x11::xlib::{
 };
 
 mod components;
-use components::{exec, memory, time};
+use components::{exec, memory, time, battery};
 mod config;
 use config::{read_config, Item};
 
 static VERSION: &str = "0.1.1";
 
 impl Item {
-    pub async fn process(&self) -> Option<String> {
+    pub async fn process(&self, sep: &String) -> Option<String> {
         match &self.name[..] {
             "memory" => memory().await,
             "time" => time().await,
             "exec" => exec(&self.params).await,
+            "battery" => battery(self.params.first().map(|x| x.to_owned())).await,
+            "echo" => Some(self.params.join(" ")),
+            "sep" => Some(sep.to_string()),
             name => {
                 println!("{} module not implemented", name);
                 None
@@ -83,7 +86,7 @@ async fn main() {
             if idx != 0 {
                 str += &conf.sep;
             }
-            let res = item.process().await;
+            let res = item.process(&conf.sep).await;
             match res {
                 Some(r) => {
                     str += &r;

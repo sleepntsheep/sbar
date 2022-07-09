@@ -2,6 +2,8 @@
 
 sbar is modular, asynchronous and configurable (yaml config file) bar for dwm written in rust.
 
+note: sbar is still in early development
+
 ### Installation
 
 By cargo
