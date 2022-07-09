@@ -1,47 +1,67 @@
-extern crate x11;
-extern crate libc;
-
+use std::ffi::CString;
 use std::thread::sleep;
 use std::time::Duration;
-use std::ffi::CString;
-use x11::xlib;
+use tokio;
+use x11::xlib::{
+    XDefaultScreen,
+    XFlush,
+    XOpenDisplay,
+    XRootWindow,
+    XStoreName
+};
 
 mod components;
-use components::{ALL, SEP};
+use components::{exec, memory, time};
+mod config;
+use config::{read_config, Item};
 
-fn main() {
-    let delay_ms = 1000;
+impl Item {
+    pub async fn process(&self) -> Option<String> {
+        match &self.name[..] {
+            "memory" => memory().await,
+            "time" => time().await,
+            "exec" => exec(&self.params).await,
+            name => {
+                println!("{} module not implemented", name);
+                None
+            }
+        }
+    }
+}
+
+#[tokio::main]
+async fn main() {
+    let conf = read_config();
+
     let dpy_n = 0_i8;
-    let dpy = unsafe { xlib::XOpenDisplay(&dpy_n) };
+    let dpy = unsafe { XOpenDisplay(&dpy_n) };
     if dpy.is_null() {
         panic!("Failed opening display");
     }
-    let scr = unsafe { xlib::XDefaultScreen(dpy) };
-    let root = unsafe { xlib::XRootWindow(dpy, scr) };
-
-//    libc::signal()
+    let scr = unsafe { XDefaultScreen(dpy) };
+    let root = unsafe { XRootWindow(dpy, scr) };
 
     loop {
-        unsafe {
-            let mut str = String::new();
-            for module in ALL.iter() {
-                let res = module();
-                match res {
-                    Some(u) => {
-                        str.push_str(&u);
-                    },
-                    None => {},
-                }
-                if module != ALL.last().unwrap() {
-                    str.push_str(SEP);
-                }
+        let mut str = String::new();
+        for (idx, item) in conf.list.iter().enumerate() {
+            if idx != 0 {
+                str += &conf.sep;
             }
-            let cstr = CString::new(str).unwrap();
-            if (xlib::XStoreName(dpy, root, cstr.as_ptr())) < 0 {
+            let res = item.process().await;
+            match res {
+                Some(r) => {
+                    str += &r;
+                }
+                None => {}
+            }
+        }
+        let cstr = CString::new(str).unwrap();
+        unsafe {
+            if (XStoreName(dpy, root, cstr.as_ptr())) < 0 {
                 panic!("XStoreName failed");
             }
-            xlib::XFlush(dpy);
+            XFlush(dpy);
         }
-        sleep(Duration::from_millis(delay_ms));
+        sleep(Duration::from_millis(conf.delay));
     }
 }
