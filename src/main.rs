@@ -1,6 +1,7 @@
 use std::ffi::CString;
 use std::thread::sleep;
 use std::time::Duration;
+use getopts;
 use tokio;
 use x11::xlib::{
     XDefaultScreen,
@@ -14,6 +15,8 @@ mod components;
 use components::{exec, memory, time};
 mod config;
 use config::{read_config, Item};
+
+static VERSION: &str = "0.1.0";
 
 impl Item {
     pub async fn process(&self) -> Option<String> {
@@ -29,9 +32,42 @@ impl Item {
     }
 }
 
+fn print_usage(program: &str, opts: getopts::Options) {
+    let brief = format!("Usage: {} FILE [options]", program);
+    println!("{}", opts.usage(&brief));
+}
+
+fn print_version() {
+    println!("version: {}", VERSION);
+}
+
 #[tokio::main]
 async fn main() {
-    let conf = read_config();
+    let args: Vec<String> = std::env::args().collect();
+    let mut opts = getopts::Options::new();
+    opts.optflag("h", "help", "display this help and exit");
+    opts.optopt("c", "config", "config file path", "PATH");
+    opts.optflag("v", "version", "output version information and exit");
+
+    let mut conf = read_config(None);
+
+    match opts.parse(&args[1..]) {
+        Ok(m) => {
+            if m.opt_present("h") {
+                print_usage(&args[0].clone(), opts);
+                return;
+            }
+            if m.opt_present("v") {
+                print_version();
+                return;
+            }
+            if m.opt_present("c") {
+                let path = m.opt_str("c");
+                conf = read_config(path);
+            }
+        },
+        Err(_) => {},
+    };
 
     let dpy_n = 0_i8;
     let dpy = unsafe { XOpenDisplay(&dpy_n) };
