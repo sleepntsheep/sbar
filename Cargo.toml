@@ -1,0 +1,15 @@
+[package]
+name = "sbar"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+chrono = "0.4.19"
+ffi = "0.0.2"
+libc = "0.2.126"
+signal-hook = "0.3.14"
+sysinfo = "0.24.6"
+tokio = "1.19.2"
+x11 = { version = "2.19.1", features = ["xlib"] }
