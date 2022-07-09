@@ -40,6 +40,7 @@ pub fn read_config(p: Option<String>) -> Config {
         Err(_) => "~/.config".to_string(),
     };
     let mut path = format!("{}/sbar/config.yaml", config_home);
+    println!("{}", path);
     match p {
         Some(p) => {
             path = p;
@@ -49,7 +50,9 @@ pub fn read_config(p: Option<String>) -> Config {
     if Path::new(path.as_str()).exists() {
         match std::fs::File::open(path) {
             Ok(f) => match serde_yaml::from_reader(f) {
-                Ok(c) => c,
+                Ok(c) => {
+                    return c;
+                },
                 Err(_) => {
                     log::warn!("Failed parsing config file, using default config");
                 }
