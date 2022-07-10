@@ -19,17 +19,7 @@ By cargo
 
 create `$HOME/.config/sbar/config.yml`
 
-    list:
-    - name: exec
-        params:
-        - echo
-        - "Welcome sheep"
-    - name: memory
-        params:
-        - LMAO
-    - name: time
-    sep: " | "
-    delay: 1000
+see [default config](https://github.com/sleepntsheep/sbar/blob/main/src/config.rs#L22) as example
 
 built-in modules:
 - exec - execute a command and return the result

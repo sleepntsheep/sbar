@@ -16,7 +16,7 @@ use components::{exec, memory, time, battery};
 mod config;
 use config::{read_config, Item};
 
-static VERSION: &str = "0.1.2";
+static VERSION: &str = "0.2.2";
 
 impl Item {
     pub async fn process(&self, sep: &String) -> Option<String> {
@@ -83,7 +83,7 @@ async fn main() {
     loop {
         let mut str = String::new();
         for (idx, item) in conf.list.iter().enumerate() {
-            if idx != 0 {
+            if idx != 0 && conf.autosep {
                 str += &conf.sep;
             }
             let res = item.process(&conf.sep).await;

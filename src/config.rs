@@ -14,6 +14,8 @@ pub struct Item {
 pub struct Config {
     pub list: Vec<Item>,
     pub sep: String,
+    #[serde(default)]
+    pub autosep: bool,
     pub delay: u64,
 }
 
@@ -23,11 +25,14 @@ list:
     params:
       - echo
       - "Welcome sheep"
-  - name: memory
+  - name: echo
     params:
-      - LMAO
+      - much bar
+  - name: battery
+  - name: memory
   - name: time
 sep: " | "
+autosep: true
 delay: 1000
 "#;
 
