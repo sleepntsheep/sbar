@@ -32,9 +32,12 @@ create `$HOME/.config/sbar/config.yml`
     delay: 1000
 
 built-in modules:
-- exec
-- memory
-- time
+- exec - execute a command and return the result
+- memory - formatted memory
+- battery - monitor battery (take battery index as param, default is 0)
+- time - formatted time
+- echo - return all params joined together as string 
+- sep - return seperator (defined in config.yaml)
 
 params is list of string
 
