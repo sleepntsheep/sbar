@@ -2,7 +2,6 @@ use serde::Deserialize;
 use serde_yaml;
 use std::env::var;
 use std::path::Path;
-use log;
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct Item {
@@ -53,11 +52,11 @@ pub fn read_config(p: Option<String>) -> Config {
                     return c;
                 },
                 Err(_) => {
-                    log::warn!("Failed parsing config file, using default config");
+                    eprintln!("Failed parsing config file, using default config");
                 }
             },
             Err(_) => {
-                log::warn!("Failed loading config file, using default config")
+                eprintln!("Failed loading config file, using default config")
             }
         };
     }

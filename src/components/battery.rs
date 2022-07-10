@@ -1,30 +1,49 @@
 use tokio::fs;
 
-pub async fn battery<'a>(p: Option<String>) -> Option<String> {
-    let bat: i32 = match p {
-        Some(p) => p.trim().parse::<i32>().unwrap(),
+pub async fn battery(args: &Vec<String>) -> Option<String> {
+    let bat: i32 = match args.first() {
+        Some(p) => match p.trim().parse::<i32>() {
+            Ok(p) => p,
+            Err(err) => {
+                eprintln!("battery: error parsing args, using bat0: {}", err);
+                0
+            }
+        },
         None => 0,
     };
 
-    let perc = fs::read_to_string(format!(
+    let perc = match fs::read_to_string(format!(
         "/sys/class/power_supply/BAT{}/capacity",
-        bat.to_owned()
+        bat,
     ))
-    .await
-    .ok()?
-    .parse::<i32>()
-    .ok();
-
-    let stat = fs::read_to_string(format!("/sys/class/power_supply/BAT{}/status", bat))
-        .await
-        .ok()?;
-
-    let icon = if stat == "Discharging" { "" } else { "" };
-
-    let perc_total = match perc {
-        Some(perc) => perc,
-        None => { return None },
+    .await {
+        Ok(p) => p,
+        Err(err) => {
+            eprintln!("battery: error reading capacity: {}", err);
+            return None;
+        }
     };
 
-    Some(format!("{} {}%", icon, perc_total))
+    let perc = match perc.trim().parse::<i32>()
+    {
+        Ok(perc) => perc,
+        Err(err) => {
+            eprintln!("battery: error parsing capacity, {}", err);
+            return None;
+        }
+    };
+
+    let stat = match fs::read_to_string(format!("/sys/class/power_supply/BAT{}/status", bat))
+    .await
+    {
+        Ok(st) => st,
+        Err(err) => {
+            eprintln!("battery: error reading status {}", err);
+            return None;
+        }
+    };
+
+    let icon = if stat == "Not charging" { "" } else { "" };
+
+    Some(format!("{} {}", icon, perc))
 }

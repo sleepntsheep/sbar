@@ -20,11 +20,11 @@ static VERSION: &str = "0.1.1";
 
 impl Item {
     pub async fn process(&self, sep: &String) -> Option<String> {
-        match &self.name[..] {
+        match self.name[..].trim() {
             "memory" => memory().await,
             "time" => time().await,
             "exec" => exec(&self.params).await,
-            "battery" => battery(self.params.first().map(|x| x.to_owned())).await,
+            "battery" => battery(&self.params).await,
             "echo" => Some(self.params.join(" ")),
             "sep" => Some(sep.to_string()),
             name => {
