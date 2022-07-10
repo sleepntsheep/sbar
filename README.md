@@ -17,7 +17,7 @@ By cargo
 
 ### Configuration
 
-create `$HOME/.config/sbar/config.yml`
+create `$HOME/.config/sbar/config.yaml`
 
 see [default config](https://github.com/sleepntsheep/sbar/blob/main/src/config.rs#L22) as example
 
