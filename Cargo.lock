@@ -332,7 +332,7 @@ checksum = "f3f6f92acf49d1b98f7a81226834412ada05458b7364277387724a237f062695"
 
 [[package]]
 name = "sbar"
-version = "0.2.2"
+version = "0.3.2"
 dependencies = [
  "chrono",
  "ffi",
