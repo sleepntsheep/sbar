@@ -16,7 +16,7 @@ use components::{exec, memory, time, battery};
 mod config;
 use config::{read_config, Item};
 
-static VERSION: &str = "0.1.1";
+static VERSION: &str = "0.1.2";
 
 impl Item {
     pub async fn process(&self, sep: &String) -> Option<String> {
