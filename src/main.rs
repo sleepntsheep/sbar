@@ -4,10 +4,11 @@ use signal_hook::consts::signal::*;
 use signal_hook_tokio::Signals;
 use std::ffi::CString;
 use std::process::exit;
+use std::ptr;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio;
-use x11::xlib::{XDefaultRootWindow, XFlush, XOpenDisplay, XStoreName};
+use x11::xlib::{Display, XDefaultRootWindow, XFlush, XOpenDisplay, XStoreName};
 
 mod components;
 use components::{battery, exec, memory, time};
@@ -15,6 +16,8 @@ mod config;
 use config::{read_config, Config, Item};
 
 static VERSION: &str = "0.4.2";
+
+static mut DPY: *mut Display = ptr::null_mut();
 
 impl Item {
     pub async fn process(&self, sep: String) -> Option<String> {
@@ -54,11 +57,14 @@ impl Sbar {
             }
         }
         unsafe {
-            setbar(str);
+            let cstr = CString::new(str).unwrap();
+            XStoreName(DPY, XDefaultRootWindow(DPY), cstr.as_ptr());
+            XFlush(DPY);
         }
     }
 
     async fn handle_signals(self: Arc<Self>, signals: Signals) {
+        //async fn handle_signals(&self, signals: Signals) {
         let mut signals = signals.fuse();
         while let Some(signal) = signals.next().await {
             match signal {
@@ -73,18 +79,6 @@ impl Sbar {
             }
         }
     }
-}
-
-unsafe fn setbar(str: String) {
-    // X11
-    let dpy_n = 0_i8;
-    let dpy = XOpenDisplay(&dpy_n);
-    if dpy.is_null() {
-        panic!("Failed opening display");
-    }
-    let cstr = CString::new(str).unwrap();
-    XStoreName(dpy, XDefaultRootWindow(dpy), cstr.as_ptr());
-    XFlush(dpy);
 }
 
 fn print_usage(program: &str, opts: getopts::Options) {
@@ -127,6 +121,15 @@ async fn main() {
         conf: read_config(confpath),
     };
 
+    unsafe {
+        let dpy_n = 0_i8;
+        DPY = XOpenDisplay(&dpy_n);
+        if DPY.is_null() {
+            panic!("Failed opening display");
+        }
+        DPY
+    };
+
     // Signal
     let mut signals = vec![SIGHUP, SIGTERM, SIGINT, SIGQUIT];
     for item in bar.conf.list.iter() {
@@ -137,10 +140,7 @@ async fn main() {
     let signalsinfo = Signals::new(signals).unwrap();
 
     let _handle = signalsinfo.handle();
-    {
-        let bar2 = Arc::from(bar.clone());
-        let _signals_task = tokio::spawn(bar2.handle_signals(signalsinfo));
-    }
+    let _signals_task = tokio::spawn(Arc::from(bar.clone()).handle_signals(signalsinfo));
 
     // main loop
     loop {
