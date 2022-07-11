@@ -16,12 +16,13 @@ license-file = "LICENSE"
 [dependencies]
 chrono = "0.4.19"
 ffi = "0.0.2"
+futures = "0.3.21"
 getopts = "0.2.21"
 libc = "0.2.126"
-log = "0.4.17"
 serde = { version = "1.0.138", features = ["derive"] }
 serde_yaml = "0.8.25"
 signal-hook = "0.3.14"
+signal-hook-tokio = { version = "0.3.1", features = ["futures-v0_3"] }
 sysinfo = "0.24.6"
-tokio = { version = "1.19.2", features = ["full"] }
+tokio = { version = "1.19.2", features = ["full", "time"] }
 x11 = { version = "2.19.1", features = ["xlib"] }

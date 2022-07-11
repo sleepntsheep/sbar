@@ -34,5 +34,20 @@ params is list of string
 ##### Exec
 take params[0] as program name and params[1..len] as args
 
+### Signal
+
+put signal in wanted component's config 
+
+    - name: echo
+      params:
+        - TEST
+      signal:
+        44
+
+then to call it, do 
+
 ### Todo
-- [] signal support for updating, etc
+
+- [x] signal support for updating, etc
+- [ ] per component update interval and signal
+- [ ] make code not bad

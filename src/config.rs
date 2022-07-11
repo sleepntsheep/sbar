@@ -3,14 +3,16 @@ use serde_yaml;
 use std::env::var;
 use std::path::Path;
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Clone)]
 pub struct Item {
     pub name: String,
     #[serde(default)]
     pub params: Vec<String>,
+    #[serde(default)]
+    pub signal: i32,
 }
 
-#[derive(Debug, PartialEq, Deserialize)]
+#[derive(Debug, PartialEq, Deserialize, Clone)]
 pub struct Config {
     pub list: Vec<Item>,
     pub sep: String,
