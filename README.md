@@ -1,6 +1,13 @@
 # sbar
 
-sbar is modular, asynchronous and configurable (yaml config file) bar for dwm written in rust.
+sbar is modular, asynchronous and configurable bar for dwm written in rust.
+
+# Features
+
+- signal for updating each component
+- yaml config file
+- async
+- per-component interval (and updating)
 
 note: sbar is still in early development
 
