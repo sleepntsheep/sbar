@@ -30,9 +30,11 @@ built-in modules:
   take params[0] as program name and params[1..len] as args
 - sep - return seperator (defined in config.yaml)
 
-params is list of string
+property
+- params is list of string
+- interval is how often to update each component, in second
+  not putting in interval use default which is never update
 
-interval is for each component, in second
 
 ### Signal
 
