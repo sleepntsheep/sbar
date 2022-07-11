@@ -48,6 +48,10 @@ put signal in wanted component's config
 
 then to call it, do 
 
+  kill -44 $(pidof sbar)
+
+replace 44 with your signal
+
 ### Todo
 
 - [x] signal support for updating, etc
