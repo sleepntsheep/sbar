@@ -1,6 +1,6 @@
 [package]
 name = "sbar"
-version = "0.4.2"
+version = "0.4.3"
 edition = "2021"
 documentation = "https://github.com/sleepntsheep/sbar"
 description = "A modular, async bar for dwm"
