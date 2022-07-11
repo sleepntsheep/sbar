@@ -57,15 +57,15 @@ impl Item {
 
 async fn updateone(bar: &mut Bar, i: usize) {
     bar.list[i].str = bar.list[i].process(bar.sep.to_string()).await;
-    draw(bar).await;
 }
 
 async fn updatebysig(this: Arc<Mutex<Bar>>, sig: i32) {
     let mtx = &mut this.lock().await;
     let bar = &mut (**mtx);
-    for (idx, item) in bar.list.iter().enumerate() {
+    for (idx, item) in bar.clone().list.iter().enumerate() {
         if item.signal == sig {
-            updateone(&mut bar.clone(), idx).await;
+            updateone(bar, idx).await;
+            draw(bar).await;
         }
     }
 }
