@@ -41,7 +41,6 @@ pub struct Bar {
     pub sep: String,
     #[serde(default)]
     pub autosep: bool,
-    pub delay: u64,
     #[serde(default)]
     pub counter: u64,
 }
