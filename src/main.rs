@@ -4,20 +4,39 @@ use signal_hook::consts::signal::*;
 use signal_hook_tokio::Signals;
 use std::ffi::CString;
 use std::process::exit;
-use std::ptr;
+use std::ptr::null_mut;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio;
+use tokio::sync::Mutex;
 use x11::xlib::{Display, XDefaultRootWindow, XFlush, XOpenDisplay, XStoreName};
 
 mod components;
 use components::{battery, exec, memory, time};
 mod config;
-use config::{read_config, Config, Item};
+use config::{read_config, Bar, Item};
 
 static VERSION: &str = "0.4.3";
 
-static mut DPY: *mut Display = ptr::null_mut();
+static mut DPY: *mut Display = null_mut();
+
+pub fn gcd(mut a: i64, mut b: i64) -> i64 {
+    while b != 0 {
+        let tmp = a;
+        a = b;
+        b = tmp % b;
+    }
+    a
+}
+
+fn print_usage(program: &str, opts: getopts::Options) {
+    let brief = format!("Usage: {} FILE [options]", program);
+    println!("{}", opts.usage(&brief));
+}
+
+fn print_version() {
+    println!("version: {}", VERSION);
+}
 
 impl Item {
     pub async fn process(&self, sep: String) -> Option<String> {
@@ -36,65 +55,93 @@ impl Item {
     }
 }
 
-#[derive(Clone)]
-struct Sbar {
-    pub conf: Config,
+async fn updateone(bar: &mut Bar, i: usize) {
+    bar.list[i].str = bar.list[i].process(bar.sep.to_string()).await;
+    draw(bar).await;
 }
 
-impl Sbar {
-    async fn update(&self) {
-        let mut str = String::new();
-        for (idx, item) in self.conf.list.iter().enumerate() {
-            if idx != 0 && self.conf.autosep {
-                str += &self.conf.sep;
-            }
-            let res = item.process(self.conf.sep.to_string()).await;
-            match res {
-                Some(r) => {
-                    str += &r;
-                }
-                None => {}
-            }
-        }
-        unsafe {
-            let cstr = CString::new(str).unwrap();
-            XStoreName(DPY, XDefaultRootWindow(DPY), cstr.as_ptr());
-            XFlush(DPY);
-        }
-    }
-
-    async fn handle_signals(self: Arc<Self>, signals: Signals) {
-        //async fn handle_signals(&self, signals: Signals) {
-        let mut signals = signals.fuse();
-        while let Some(signal) = signals.next().await {
-            match signal {
-                SIGHUP => {
-                    // Reload configuration
-                    // Reopen the log file
-                }
-                SIGTERM | SIGINT | SIGQUIT => exit(0),
-                _ => {
-                    self.update().await;
-                }
-            }
+async fn updatebysig(this: Arc<Mutex<Bar>>, sig: i32) {
+    let mtx = &mut this.lock().await;
+    let bar = &mut (**mtx);
+    for (idx, item) in bar.list.iter().enumerate() {
+        if item.signal == sig {
+            updateone(&mut bar.clone(), idx).await;
         }
     }
 }
 
-fn print_usage(program: &str, opts: getopts::Options) {
-    let brief = format!("Usage: {} FILE [options]", program);
-    println!("{}", opts.usage(&brief));
+async fn draw(bar: &mut Bar) {
+    let str = bar
+        .list
+        .iter()
+        .filter(|x| x.str.is_some())
+        .map(|x| x.clone().str.unwrap())
+        .collect::<Vec<String>>()
+        .join(if bar.autosep { bar.sep.as_str() } else { "" });
+    let cstr = match CString::new(str) {
+        Ok(r) => r,
+        Err(err) => {
+            eprintln!("error creating CString: {}", err);
+            return;
+        }
+    };
+    unsafe {
+        XStoreName(DPY, XDefaultRootWindow(DPY), cstr.as_ptr());
+        XFlush(DPY);
+    }
 }
 
-fn print_version() {
-    println!("version: {}", VERSION);
+async fn update(this: Arc<Mutex<Bar>>) {
+    let mtx = &mut this.lock().await;
+    let bar = &mut (**mtx);
+    let mut drawing = false;
+    if bar.counter == 0 {
+        drawing = true;
+        for (idx, _item) in bar.clone().list.iter_mut().enumerate() {
+            updateone(bar, idx).await;
+        }
+    } else {
+        for (idx, item) in bar.clone().list.iter().enumerate() {
+            if item.interval != 0 && bar.counter % item.interval == 0 {
+                drawing = true;
+                updateone(bar, idx).await;
+            }
+        }
+    }
+    if drawing { draw(bar).await }
+    bar.counter += 1;
+}
+
+async fn handle_signals(this: Arc<Mutex<Bar>>, signals: Signals) {
+    let mut signals = signals.fuse();
+    while let Some(signal) = signals.next().await {
+        match signal {
+            SIGHUP => {
+                // Reload configuration
+                // Reopen the log file
+            }
+            SIGTERM | SIGINT | SIGQUIT => exit(0),
+            _ => {
+                updatebysig(this.clone(), signal).await;
+            }
+        }
+    }
+}
+
+async fn run(this: Arc<Mutex<Bar>>) {
+    loop {
+        update(this.clone()).await;
+        tokio::time::sleep(Duration::from_secs(1)).await;
+        let mtx = &mut this.lock().await;
+        let bar = &mut (**mtx);
+        bar.counter += 1;
+    }
 }
 
 #[tokio::main]
 async fn main() {
     let mut confpath: Option<String> = None;
 
-    // getopt
     let args: Vec<String> = std::env::args().collect();
     let mut opts = getopts::Options::new();
     opts.optflag("h", "help", "display this help and exit");
@@ -117,37 +164,35 @@ async fn main() {
         Err(_) => {}
     };
 
-    let bar = Sbar {
-        conf: read_config(confpath),
-    };
-
+    // init XDisplay
     unsafe {
-        let dpy_n = 0_i8;
-        DPY = XOpenDisplay(&dpy_n);
-        if DPY.is_null() {
-            panic!("Failed opening display");
-        }
-        DPY
-    };
+        DPY = {
+            let dpy_n = 0_i8;
+            let dpy = XOpenDisplay(&dpy_n);
+            if dpy.is_null() {
+                panic!("Failed opening display");
+            }
+            dpy
+        };
+    }
 
-    // Signal
+    #[allow(unused_mut)]
+    let mut bar = read_config(confpath);
+
     let mut signals = vec![SIGHUP, SIGTERM, SIGINT, SIGQUIT];
-    for item in bar.conf.list.iter() {
+    for item in bar.list.iter() {
         if item.signal != 0 {
             signals.push(item.signal);
         }
     }
     let signalsinfo = Signals::new(signals).unwrap();
-
     let _handle = signalsinfo.handle();
-    let _signals_task = tokio::spawn(Arc::from(bar.clone()).handle_signals(signalsinfo));
 
-    // main loop
-    loop {
-        bar.update().await;
-        tokio::time::sleep(Duration::from_millis(bar.conf.delay)).await;
-    }
+    let barm = Arc::from(Mutex::new(bar));
 
-    //_handle.
-    //signals_task.await;
+    let signals_task = tokio::spawn(handle_signals(barm.clone(), signalsinfo));
+
+    run(barm).await;
+
+    signals_task.await.ok();
 }

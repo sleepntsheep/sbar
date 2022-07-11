@@ -19,7 +19,7 @@ By cargo
 
 create `$HOME/.config/sbar/config.yaml`
 
-see [default config](https://github.com/sleepntsheep/sbar/blob/main/src/config.rs#L22) as example
+see [default config](https://github.com/sleepntsheep/sbar/blob/main/src/config.rs#L1) as example
 
 built-in modules:
 - exec - execute a command and return the result
@@ -27,12 +27,12 @@ built-in modules:
 - battery - monitor battery (take battery index as param, default is 0)
 - time - formatted time
 - echo - return all params joined together as string 
+  take params[0] as program name and params[1..len] as args
 - sep - return seperator (defined in config.yaml)
 
 params is list of string
 
-##### Exec
-take params[0] as program name and params[1..len] as args
+interval is for each component, in second
 
 ### Signal
 
@@ -49,5 +49,5 @@ then to call it, do
 ### Todo
 
 - [x] signal support for updating, etc
-- [ ] per component update interval and signal
+- [x] per component update interval and signal
 - [ ] make code not bad

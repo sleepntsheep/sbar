@@ -12,20 +12,16 @@ pub async fn battery(args: &Vec<String>) -> Option<String> {
         None => 0,
     };
 
-    let perc = match fs::read_to_string(format!(
-        "/sys/class/power_supply/BAT{}/capacity",
-        bat,
-    ))
-    .await {
-        Ok(p) => p,
-        Err(err) => {
-            eprintln!("battery: error reading capacity: {}", err);
-            return None;
-        }
-    };
+    let perc =
+        match fs::read_to_string(format!("/sys/class/power_supply/BAT{}/capacity", bat,)).await {
+            Ok(p) => p,
+            Err(err) => {
+                eprintln!("battery: error reading capacity: {}", err);
+                return None;
+            }
+        };
 
-    let perc = match perc.trim().parse::<i32>()
-    {
+    let perc = match perc.trim().parse::<i32>() {
         Ok(perc) => perc,
         Err(err) => {
             eprintln!("battery: error parsing capacity, {}", err);
@@ -33,8 +29,7 @@ pub async fn battery(args: &Vec<String>) -> Option<String> {
         }
     };
 
-    let stat = match fs::read_to_string(format!("/sys/class/power_supply/BAT{}/status", bat))
-    .await
+    let stat = match fs::read_to_string(format!("/sys/class/power_supply/BAT{}/status", bat)).await
     {
         Ok(st) => st,
         Err(err) => {

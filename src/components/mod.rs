@@ -1,8 +1,8 @@
-mod time;
 mod battery;
-mod memory;
 mod exec;
-pub use time::time;
-pub use memory::memory;
-pub use exec::exec;
+mod memory;
+mod time;
 pub use battery::battery;
+pub use exec::exec;
+pub use memory::memory;
+pub use time::time;

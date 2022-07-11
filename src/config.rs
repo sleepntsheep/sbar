@@ -1,3 +1,22 @@
+static DEFAULT_CONFIG: &str = r#"
+list:
+  - name: exec
+    params:
+      - echo
+      - "Welcome sheep"
+  - name: echo
+    params:
+      - much bar
+  - name: battery
+    interval: 30
+  - name: memory
+    interval: 5
+  - name: time
+    interval: 1
+sep: " | "
+autosep: true
+"#;
+
 use serde::Deserialize;
 use serde_yaml;
 use std::env::var;
@@ -10,35 +29,24 @@ pub struct Item {
     pub params: Vec<String>,
     #[serde(default)]
     pub signal: i32,
+    #[serde(default)]
+    pub interval: u64,
+    #[serde(default)]
+    pub str: Option<String>,
 }
 
 #[derive(Debug, PartialEq, Deserialize, Clone)]
-pub struct Config {
+pub struct Bar {
     pub list: Vec<Item>,
     pub sep: String,
     #[serde(default)]
     pub autosep: bool,
     pub delay: u64,
+    #[serde(default)]
+    pub counter: u64,
 }
 
-static DEFAULT_CONFIG: &str = r#"
-list:
-  - name: exec
-    params:
-      - echo
-      - "Welcome sheep"
-  - name: echo
-    params:
-      - much bar
-  - name: battery
-  - name: memory
-  - name: time
-sep: " | "
-autosep: true
-delay: 1000
-"#;
-
-pub fn read_config(p: Option<String>) -> Config {
+pub fn read_config(p: Option<String>) -> Bar {
     let config_home = match var("XDG_CONFIG_HOME")
         .or_else(|_| var("HOME").map(|home| format!("{}/.config", home)))
     {
@@ -57,7 +65,7 @@ pub fn read_config(p: Option<String>) -> Config {
             Ok(f) => match serde_yaml::from_reader(f) {
                 Ok(c) => {
                     return c;
-                },
+                }
                 Err(_) => {
                     eprintln!("Failed parsing config file, using default config");
                 }
