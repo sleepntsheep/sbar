@@ -8,6 +8,7 @@ sbar is modular, asynchronous and configurable bar for dwm written in rust.
 - yaml config file
 - async
 - per-component interval (and updating)
+- status2d color support
 
 note: sbar is still in early development
 
@@ -29,19 +30,24 @@ create `$HOME/.config/sbar/config.yaml`
 see [default config](https://github.com/sleepntsheep/sbar/blob/main/src/config.rs#L1) as example
 
 built-in modules:
+
 - exec - execute a command and return the result
+  take params[0] as program name and params[1..len] as args
 - memory - formatted memory
 - battery - monitor battery (take battery index as param, default is 0)
+- battery_icon - nerd font icon that show battery charging status
 - time - formatted time
 - echo - return all params joined together as string 
-  take params[0] as program name and params[1..len] as args
-- sep - return seperator (defined in config.yaml)
 
 property
 - params is list of string
 - interval is how often to update each component, in second
   not putting in interval use default which is never update
+- fg and bg: colors for that component, in this format: "#FFFFFF"
+    **requires status2d patch, and status2d_color: true in config**
+- prefix and suffix:  if exists will overwrite global prefix and suffix
 
+(prefix and suffix is put before and after every components)
 
 ### Signal
 

@@ -16,7 +16,7 @@ use components::{battery, exec, memory, time};
 mod config;
 use config::{read_config, Bar, Item};
 
-static VERSION: &str = "0.5.6";
+static VERSION: &str = "0.6.6";
 
 static mut DPY: *mut Display = null_mut();
 
@@ -39,24 +39,46 @@ fn print_version() {
 }
 
 impl Item {
-    pub async fn process(&self, sep: String) -> Option<String> {
-        match self.name[..].trim() {
-            "memory" => memory().await,
-            "time" => time(&self.params).await,
-            "exec" => exec(&self.params).await,
-            "battery" => battery(&self.params).await,
+    pub async fn process(&self, bar: &Bar) -> Option<String> {
+        let color_fg = match &self.fg {
+            Some(c) => format!("^c{}^", c),
+            None => "".to_string(),
+        };
+        let color_bg = match &self.bg {
+            Some(c) => format!("^b{}^", c),
+            None => "".to_string(),
+        };
+        let color_rst = "^d^";
+
+        let prefix: String = {
+            if self.prefix != "" { &self.prefix } else { &bar.prefix }
+        }.clone();
+        let suffix: String = {
+            if self.suffix != "" { &self.suffix } else { &bar.suffix }
+        }.clone();
+
+        let txt = &match self.name[..].trim() {
+            "memory" => memory::memory().await,
+            "time" => time::time(&self.params).await,
+            "exec" => exec::exec(&self.params).await,
+            "battery" => battery::battery(&self.params).await,
+            "battery_icon" => battery::battery_icon(&self.params).await,
             "echo" => Some(self.params.join(" ")),
-            "sep" => Some(sep),
             name => {
                 println!("{} module not implemented", name);
-                None
+                return None
             }
+        }?;
+        let mut txt = prefix + txt + &suffix;
+        if bar.status2d_color {
+            txt = color_fg + &color_bg + &txt + color_rst;
         }
+        Some(txt)
     }
 }
 
 async fn updateone(bar: &mut Bar, i: usize) {
-    bar.list[i].str = bar.list[i].process(bar.sep.to_string()).await;
+    bar.list[i].str = bar.list[i].process(bar).await;
 }
 
 async fn updatebysig(this: Arc<Mutex<Bar>>, sig: i32) {
@@ -77,7 +99,7 @@ async fn draw(bar: &mut Bar) {
         .filter(|x| x.str.is_some())
         .map(|x| x.clone().str.unwrap())
         .collect::<Vec<String>>()
-        .join(if bar.autosep { bar.sep.as_str() } else { "" });
+        .join(&bar.sep);
     let cstr = match CString::new(str) {
         Ok(r) => r,
         Err(err) => {

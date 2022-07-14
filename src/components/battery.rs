@@ -29,6 +29,22 @@ pub async fn battery(args: &Vec<String>) -> Option<String> {
         }
     };
 
+    Some(format!("{}", perc))
+}
+
+
+pub async fn battery_icon(args: &Vec<String>) -> Option<String> {
+    let bat: i32 = match args.first() {
+        Some(p) => match p.trim().parse::<i32>() {
+            Ok(p) => p,
+            Err(err) => {
+                eprintln!("battery: error parsing args, using bat0: {}", err);
+                0
+            }
+        },
+        None => 0,
+    };
+
     let stat = match fs::read_to_string(format!("/sys/class/power_supply/BAT{}/status", bat)).await
     {
         Ok(st) => st,
@@ -40,5 +56,5 @@ pub async fn battery(args: &Vec<String>) -> Option<String> {
 
     let icon = if stat == "Not charging" { "" } else { "" };
 
-    Some(format!("{} {}", icon, perc))
+    Some(format!("{}", icon))
 }

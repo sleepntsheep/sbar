@@ -1,20 +1,30 @@
 static DEFAULT_CONFIG: &str = r#"
 list:
   - name: exec
+    prefix: "  "
+      # item's prefix and suffix will overwrite global 
     params:
-      - echo
-      - "Welcome sheep"
-  - name: echo
-    params:
-      - much bar
+      - pamixer
+      - "--get-volume-human"
+    signal: 46
   - name: battery
     interval: 30
   - name: memory
-    interval: 5
+    interval: 10
   - name: time
+    params:
+      - " %Y-%m-%d %I:%M:%S"
     interval: 1
-sep: " | "
-autosep: true
+    fg: '#000000' # qoute is needed because # is used for yaml comments
+    bg: '#ffffff'
+
+# placed between every component
+sep: "|"
+# global prefix, suffix
+prefix: " "
+suffix: " "
+# use status2d patch for color (bg, fg property in component)
+status2d_color: true
 "#;
 
 use serde::Deserialize;
@@ -32,7 +42,15 @@ pub struct Item {
     #[serde(default)]
     pub interval: u64,
     #[serde(default)]
+    pub bg: Option<String>,
+    #[serde(default)]
+    pub fg: Option<String>,
+    #[serde(default)]
     pub str: Option<String>,
+    #[serde(default)]
+    pub prefix: String,
+    #[serde(default)]
+    pub suffix: String,
 }
 
 #[derive(Debug, PartialEq, Deserialize, Clone)]
@@ -40,9 +58,13 @@ pub struct Bar {
     pub list: Vec<Item>,
     pub sep: String,
     #[serde(default)]
-    pub autosep: bool,
+    pub status2d_color: bool,
     #[serde(default)]
     pub counter: u64,
+    #[serde(default)]
+    pub prefix: String,
+    #[serde(default)]
+    pub suffix: String,
 }
 
 pub fn read_config(p: Option<String>) -> Bar {
