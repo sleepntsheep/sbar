@@ -42,7 +42,7 @@ impl Item {
     pub async fn process(&self, sep: String) -> Option<String> {
         match self.name[..].trim() {
             "memory" => memory().await,
-            "time" => time().await,
+            "time" => time(&self.params).await,
             "exec" => exec(&self.params).await,
             "battery" => battery(&self.params).await,
             "echo" => Some(self.params.join(" ")),
