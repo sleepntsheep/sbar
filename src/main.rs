@@ -10,24 +10,16 @@ use std::time::Duration;
 use tokio;
 use tokio::sync::Mutex;
 use x11::xlib::{Display, XDefaultRootWindow, XFlush, XOpenDisplay, XStoreName};
+use log::{warn, info, debug, trace};
 
 mod components;
 use components::{battery, exec, memory, time};
 mod config;
 use config::{read_config, Bar, Item};
 
-static VERSION: &str = "0.6.6";
+static VERSION: &str = "0.7.6";
 
 static mut DPY: *mut Display = null_mut();
-
-pub fn gcd(mut a: i64, mut b: i64) -> i64 {
-    while b != 0 {
-        let tmp = a;
-        a = b;
-        b = tmp % b;
-    }
-    a
-}
 
 fn print_usage(program: &str, opts: getopts::Options) {
     let brief = format!("Usage: {} FILE [options]", program);
@@ -97,13 +89,13 @@ async fn draw(bar: &mut Bar) {
         .list
         .iter()
         .filter(|x| x.str.is_some())
-        .map(|x| x.clone().str.unwrap())
+        .map(|x| x.str.clone().unwrap())
         .collect::<Vec<String>>()
         .join(&bar.sep);
     let cstr = match CString::new(str) {
         Ok(r) => r,
         Err(err) => {
-            eprintln!("error creating CString: {}", err);
+            warn!("draw: failed create CString ({})", err);
             return;
         }
     };
@@ -144,6 +136,7 @@ async fn handle_signals(this: Arc<Mutex<Bar>>, signals: Signals) {
             }
             SIGTERM | SIGINT | SIGQUIT => exit(0),
             _ => {
+                trace!("handle_signals: signal {} received", signal);
                 updatebysig(this.clone(), signal).await;
             }
         }
@@ -162,6 +155,8 @@ async fn run(this: Arc<Mutex<Bar>>) {
 
 #[tokio::main]
 async fn main() {
+    env_logger::init();
+
     let mut confpath: Option<String> = None;
 
     let args: Vec<String> = std::env::args().collect();
@@ -198,8 +193,7 @@ async fn main() {
         };
     }
 
-    #[allow(unused_mut)]
-    let mut bar = read_config(confpath);
+    let bar = read_config(confpath);
 
     let mut signals = vec![SIGHUP, SIGTERM, SIGINT, SIGQUIT];
     for item in bar.list.iter() {

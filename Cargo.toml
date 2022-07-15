@@ -1,6 +1,6 @@
 [package]
 name = "sbar"
-version = "0.6.6"
+version = "0.7.6"
 edition = "2021"
 documentation = "https://github.com/sleepntsheep/sbar"
 description = "A modular, async bar for dwm"
@@ -15,9 +15,11 @@ license-file = "LICENSE"
 
 [dependencies]
 chrono = "0.4.19"
+env_logger = "0.9.0"
 ffi = "0.0.2"
 futures = "0.3.21"
 getopts = "0.2.21"
+log = "0.4.17"
 serde = { version = "1.0.138", features = ["derive"] }
 serde_yaml = "0.8.25"
 signal-hook = "0.3.14"
