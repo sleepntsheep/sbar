@@ -17,7 +17,7 @@ use components::{battery, exec, memory, time, temp};
 mod config;
 use config::{read_config, Bar, Item};
 
-static VERSION: &str = "0.7.6";
+static VERSION: &str = "0.7.7";
 
 static mut DPY: *mut Display = null_mut();
 
