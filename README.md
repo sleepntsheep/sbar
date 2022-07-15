@@ -36,6 +36,7 @@ built-in modules:
 - memory - formatted memory
 - battery - monitor battery (take battery index as param, default is 0)
 - battery_icon - nerd font icon that show battery charging status
+- temp - monitor temp in celcius (take thermal zone as param, default is 0)
 - time - formatted time
 - echo - return all params joined together as string 
 

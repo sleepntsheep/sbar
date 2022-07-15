@@ -10,10 +10,10 @@ use std::time::Duration;
 use tokio;
 use tokio::sync::Mutex;
 use x11::xlib::{Display, XDefaultRootWindow, XFlush, XOpenDisplay, XStoreName};
-use log::{warn, info, debug, trace};
+use log::{info, trace};
 
 mod components;
-use components::{battery, exec, memory, time};
+use components::{battery, exec, memory, time, temp};
 mod config;
 use config::{read_config, Bar, Item};
 
@@ -51,13 +51,14 @@ impl Item {
 
         let txt = &match self.name[..].trim() {
             "memory" => memory::memory().await,
+            "temp" => temp::temp(&self.params).await,
             "time" => time::time(&self.params).await,
             "exec" => exec::exec(&self.params).await,
             "battery" => battery::battery(&self.params).await,
             "battery_icon" => battery::battery_icon(&self.params).await,
             "echo" => Some(self.params.join(" ")),
             name => {
-                println!("{} module not implemented", name);
+                info!("{} module not implemented", name);
                 return None
             }
         }?;
@@ -95,7 +96,7 @@ async fn draw(bar: &mut Bar) {
     let cstr = match CString::new(str) {
         Ok(r) => r,
         Err(err) => {
-            warn!("draw: failed create CString ({})", err);
+            info!("draw: failed create CString ({})", err);
             return;
         }
     };
