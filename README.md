@@ -14,8 +14,6 @@ sbar is modular, asynchronous and configurable bar for dwm written in rust.
 
 ![example](pictures/example.png)
 
-note: sbar is still in early development
-
 ### Installation
 
 By cargo
