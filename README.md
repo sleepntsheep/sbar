@@ -10,6 +10,10 @@ sbar is modular, asynchronous and configurable bar for dwm written in rust.
 - per-component interval (and updating)
 - status2d color support
 
+# Example
+
+![example](pictures/example.png)
+
 note: sbar is still in early development
 
 ### Installation
